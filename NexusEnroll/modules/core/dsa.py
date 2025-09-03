@@ -1,16 +1,67 @@
-# modules/core/dsa.py
+from dataclasses import dataclass, field
+from typing import List, Set, Optional
 
+
+@dataclass(frozen=True)
+class Meeting:
+    """Immutable meeting schedule for a section"""
+    day_of_week: str
+    start_time: str   # stored as "HH:MM"
+    end_time: str
+    location: str
+
+
+@dataclass
 class Course:
-    """
-    Represents a course in NexusEnroll.
-    """
+    course_id: str
+    code: str
+    name: str
+    description: str
+    department: str
+    credits: int
+    prerequisites: List[str] = field(default_factory=list)
 
-    def __init__(self, code, name, prerequisites=None, instructor=None, capacity=30, schedule=None, description=""):
-        self.code = code
-        self.name = name
-        self.prerequisites = prerequisites if prerequisites else []
-        self.instructor = instructor
-        self.capacity = capacity
-        self.enrolled_students = []    # List of Student objects
-        self.schedule = schedule if schedule else []  # [(day, start_time, end_time)]
-        self.description = description
+
+@dataclass
+class Section:
+    section_id: str
+    course_id: str
+    term: str
+    instructor_id: str
+    capacity: int
+    enrolled_count: int = 0
+    meetings: List[Meeting] = field(default_factory=list)
+    waitlist: List[str] = field(default_factory=list)
+
+    def has_seat(self) -> bool:
+        return self.enrolled_count < self.capacity
+
+    def increment_enrolled(self):
+        if not self.has_seat():
+            raise ValueError("Section is at capacity")
+        self.enrolled_count += 1
+
+    def decrement_enrolled(self):
+        if self.enrolled_count <= 0:
+            raise ValueError("No students to remove")
+        self.enrolled_count -= 1
+
+
+@dataclass
+class Student:
+    student_id: str
+    name: str
+    program_id: str
+    preferred_channel: str
+    completed_courses: Set[str] = field(default_factory=set)
+    current_enrollments: Set[str] = field(default_factory=set)
+
+
+@dataclass
+class Faculty:
+    faculty_id: str
+    name: str
+    department: str
+    email: str
+    phone: str
+    courses_taught: List[str] = field(default_factory=list)
